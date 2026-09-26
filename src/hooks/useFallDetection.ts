@@ -20,7 +20,7 @@ export function useFallDetection() {
   const startVoiceTriage = useCallback(async (peakG: number) => {
     try {
       setVoiceStatus('LISTENING');
-      const triage = await AITriageService.recordAndAnalyze(4000, peakG);
+      const triage = await AITriageService.recordAndAnalyze(peakG);
 
       if (!triage) {
         setVoiceStatus('IDLE');

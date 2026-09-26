@@ -20,9 +20,7 @@ export function usePillReminder(onVoiceStatusChange: (status: any) => void) {
 
       VoiceService.alertPillReminder(pill.name, async () => {
         onVoiceStatusChange('LISTENING');
-        const started = await audioRecorder.startRecording();
-        await new Promise((resolve) => setTimeout(resolve, 4000));
-        const audioUri = started ? await audioRecorder.stopRecording() : null;
+        const audioUri = await audioRecorder.recordWithVad(6000, 1500);
 
         onVoiceStatusChange('ANALYZING');
         let isTaken = false;

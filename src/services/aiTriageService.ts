@@ -60,14 +60,9 @@ export const AITriageService = {
     };
   },
 
-  recordAndAnalyze: async (
-    durationMs: number = 4000,
-    peakG: number = 3.0
-  ): Promise<TriageResult> => {
-    console.log('[AITriage] Initiating voice recording...');
-    const started = await audioRecorder.startRecording();
-    await new Promise((resolve) => setTimeout(resolve, durationMs));
-    const audioUri = started ? await audioRecorder.stopRecording() : null;
+  recordAndAnalyze: async (peakG: number = 3.0): Promise<TriageResult> => {
+    console.log('[AITriage] Initiating VAD voice recording...');
+    const audioUri = await audioRecorder.recordWithVad(6000, 1500);
     return await AITriageService.analyzeAudio(audioUri, peakG);
   },
 };

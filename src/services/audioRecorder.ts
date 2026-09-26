@@ -13,42 +13,30 @@ export class AudioRecorderService {
     try {
       const { granted } = await requestRecordingPermissionsAsync();
       return granted;
-    } catch (err) {
-      console.warn('[AudioRecorder] Permission check error:', err);
+    } catch {
       return false;
     }
   }
 
   public async startRecording(): Promise<boolean> {
     try {
-      const hasPermission = await this.requestPermissions();
-      if (!hasPermission) {
-        console.warn('[AudioRecorder] Mic permission denied');
-        return false;
-      }
-
-      await setAudioModeAsync({
-        allowsRecording: true,
-        playsInSilentMode: true,
-      });
-
-      const preset = RecordingPresets.HIGH_QUALITY;
-      const options = {
-        extension: preset.extension,
-        sampleRate: preset.sampleRate,
-        numberOfChannels: preset.numberOfChannels,
-        bitRate: preset.bitRate,
-        isMeteringEnabled: false,
-        ...(Platform.OS === 'android' ? preset.android : preset.ios),
+      if (!(await this.requestPermissions())) return false;
+      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+      const p = RecordingPresets.HIGH_QUALITY;
+      const opts = {
+        extension: p.extension,
+        sampleRate: p.sampleRate,
+        numberOfChannels: p.numberOfChannels,
+        bitRate: p.bitRate,
+        isMeteringEnabled: true,
+        ...(Platform.OS === 'android' ? p.android : p.ios),
       };
-
-      this.recorder = new AudioModule.AudioRecorder(options);
+      this.recorder = new AudioModule.AudioRecorder(opts);
       await this.recorder.prepareToRecordAsync();
       this.recorder.record();
-      console.log('[AudioRecorder] Recording started successfully');
       return true;
     } catch (err) {
-      console.error('[AudioRecorder] Failed to start recording:', err);
+      console.error('[AudioRecorder] Start error:', err);
       this.recorder = null;
       return false;
     }
@@ -59,14 +47,47 @@ export class AudioRecorderService {
       if (!this.recorder) return null;
       await this.recorder.stop();
       const uri = this.recorder.uri;
-      console.log('[AudioRecorder] Recording stopped, URI:', uri);
       this.recorder = null;
       return uri;
     } catch (err) {
-      console.error('[AudioRecorder] Failed to stop recording:', err);
+      console.error('[AudioRecorder] Stop error:', err);
       this.recorder = null;
       return null;
     }
+  }
+
+  public async recordWithVad(maxMs = 6000, minMs = 1500): Promise<string | null> {
+    if (!(await this.startRecording())) return null;
+    let hasSpoken = false;
+    let silenceStart = 0;
+    const startTime = Date.now();
+
+    return new Promise((resolve) => {
+      const timer = setInterval(async () => {
+        if (!this.recorder) {
+          clearInterval(timer);
+          return resolve(null);
+        }
+        const elapsed = Date.now() - startTime;
+        const db = this.recorder.getStatus()?.metering ?? -160;
+
+        if (db > -35) {
+          hasSpoken = true;
+          silenceStart = 0;
+        } else if (hasSpoken && db < -42) {
+          if (!silenceStart) silenceStart = Date.now();
+          if (Date.now() - silenceStart >= 1000 && elapsed >= minMs) {
+            clearInterval(timer);
+            return resolve(await this.stopRecording());
+          }
+        }
+
+        if (elapsed >= maxMs) {
+          clearInterval(timer);
+          return resolve(await this.stopRecording());
+        }
+      }, 100);
+    });
   }
 }
 
