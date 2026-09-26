@@ -1,5 +1,6 @@
 import { uploadAsync, FileSystemUploadType } from 'expo-file-system/legacy';
 import { audioRecorder } from './audioRecorder';
+import { LocationService } from './locationService';
 
 export interface TriageResult {
   transcript: string;
@@ -17,7 +18,9 @@ export const AITriageService = {
   ): Promise<TriageResult> => {
     if (AITriageService.backendUrl && audioUri) {
       try {
-        console.log('[AITriage] Uploading audio to:', AITriageService.backendUrl);
+        const coords = await LocationService.getRealLocation();
+        console.log('[AITriage] Uploading with real GPS:', coords.latitude, coords.longitude);
+
         const response = await uploadAsync(AITriageService.backendUrl, audioUri, {
           fieldName: 'audio',
           httpMethod: 'POST',
@@ -27,6 +30,8 @@ export const AITriageService = {
             peak_g: String(peakG),
             device_id: 'chest-iot-node-01',
             timestamp: String(Date.now()),
+            latitude: String(coords.latitude),
+            longitude: String(coords.longitude),
           },
         });
 
