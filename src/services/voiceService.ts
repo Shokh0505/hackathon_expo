@@ -13,11 +13,26 @@ export const VoiceService = {
     });
   },
 
-  alertFallDetected: (onFinishedSpeaking?: () => void) => {
+  alertFallDetected: (onDone?: () => void) => {
     VoiceService.speak(
       'Warning! Fall detected! Are you okay? Please speak now.',
-      onFinishedSpeaking
+      onDone
     );
+  },
+
+  alertPillReminder: (pillName: string, onDone?: () => void) => {
+    VoiceService.speak(
+      `Hello! It is time for your ${pillName}. Have you taken your medicine?`,
+      onDone
+    );
+  },
+
+  alertPillTaken: (pillName: string) => {
+    VoiceService.speak(`Wonderful! I have marked your ${pillName} as taken.`);
+  },
+
+  alertPillSnoozed: () => {
+    VoiceService.speak("Understood. I will remind you again in 10 minutes.");
   },
 
   alertReset: (customMsg?: string) => {
