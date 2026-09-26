@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Pill } from '../types/medication';
 import { PillStorageService } from '../services/pillStorage';
 import { VoiceService } from '../services/voiceService';
@@ -6,7 +6,7 @@ import { audioRecorder } from '../services/audioRecorder';
 
 export function usePillReminder(onVoiceStatusChange: (status: any) => void) {
   const [pills, setPills] = useState<Pill[]>([]);
-  const [activePill, setActivePill] = useState<Pill | null>(null);
+  const isRunningRef = useRef(false);
 
   useEffect(() => {
     PillStorageService.getPills().then(setPills);
@@ -14,7 +14,8 @@ export function usePillReminder(onVoiceStatusChange: (status: any) => void) {
 
   const triggerPillReminder = useCallback(
     async (pill: Pill) => {
-      setActivePill(pill);
+      if (isRunningRef.current) return;
+      isRunningRef.current = true;
       onVoiceStatusChange('SPEAKING');
 
       VoiceService.alertPillReminder(pill.name, async () => {
@@ -25,12 +26,10 @@ export function usePillReminder(onVoiceStatusChange: (status: any) => void) {
 
         onVoiceStatusChange('ANALYZING');
         let isTaken = false;
-        let aiResponse = '';
 
         if (audioUri) {
           const res = await PillStorageService.verifyVoiceAdherence(audioUri, pill.id);
           isTaken = res.is_taken ?? (res.intent === 'TAKEN');
-          aiResponse = res.ai_response;
         }
 
         if (isTaken) {
@@ -43,17 +42,22 @@ export function usePillReminder(onVoiceStatusChange: (status: any) => void) {
 
         setTimeout(() => {
           onVoiceStatusChange('IDLE');
-          setActivePill(null);
+          isRunningRef.current = false;
         }, 1500);
       });
     },
     [onVoiceStatusChange]
   );
 
+  const triggerNextDuePill = useCallback(() => {
+    const nextDue = pills.find((p) => !p.isTaken) || pills[0];
+    if (nextDue) triggerPillReminder(nextDue);
+  }, [pills, triggerPillReminder]);
+
   const togglePill = async (pillId: string) => {
     const updated = await PillStorageService.togglePill(pillId);
     setPills(updated);
   };
 
-  return { pills, activePill, triggerPillReminder, togglePill };
+  return { pills, triggerPillReminder, triggerNextDuePill, togglePill };
 }

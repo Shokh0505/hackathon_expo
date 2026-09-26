@@ -6,13 +6,15 @@ import { usePillReminder } from './src/hooks/usePillReminder';
 import { SphereFace } from './src/components/SphereFace';
 import { CompanionSpeechBubble } from './src/components/CompanionSpeechBubble';
 import { CompanionControls } from './src/components/CompanionControls';
-import { PillTrackerCard } from './src/components/PillTrackerCard';
+import { MedicationModal } from './src/components/MedicationModal';
 import { VoiceStatus } from './src/types/sensors';
 
 export default function App() {
   const [localVoiceStatus, setLocalVoiceStatus] = useState<VoiceStatus>('IDLE');
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
+
   const { state, voiceStatus: fallVoiceStatus, aiTriage, resetToNormal, triggerTestFall } = useFallDetection();
-  const { pills, triggerPillReminder, togglePill } = usePillReminder(setLocalVoiceStatus);
+  const { pills, triggerPillReminder, triggerNextDuePill, togglePill } = usePillReminder(setLocalVoiceStatus);
 
   const isFallen = state === 'FALLEN';
   const effectiveVoiceStatus = fallVoiceStatus !== 'IDLE' ? fallVoiceStatus : localVoiceStatus;
@@ -34,16 +36,20 @@ export default function App() {
           aiTriage={aiTriage}
         />
 
-        <PillTrackerCard
-          pills={pills}
-          onTriggerReminder={triggerPillReminder}
-          onTogglePill={togglePill}
-        />
-
         <CompanionControls
           state={state}
           onReset={resetToNormal}
           onTestFall={triggerTestFall}
+          onTriggerPill={triggerNextDuePill}
+          onOpenSchedule={() => setIsScheduleOpen(true)}
+        />
+
+        <MedicationModal
+          visible={isScheduleOpen}
+          pills={pills}
+          onClose={() => setIsScheduleOpen(false)}
+          onTriggerPill={triggerPillReminder}
+          onTogglePill={togglePill}
         />
       </ScrollView>
     </SafeAreaView>
@@ -64,7 +70,8 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingTop: 24,
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'space-between',
+    minHeight: '100%',
   },
   header: {
     alignItems: 'center',
