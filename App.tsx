@@ -1,16 +1,16 @@
 import React from 'react';
-import { StyleSheet, Text, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, Text, View, SafeAreaView, ScrollView } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useFallDetection } from './src/hooks/useFallDetection';
-import { StatusBanner } from './src/components/StatusBanner';
-import { TelemetryCard } from './src/components/TelemetryCard';
+import { SphereFace } from './src/components/SphereFace';
+import { CompanionSpeechBubble } from './src/components/CompanionSpeechBubble';
+import { CompanionControls } from './src/components/CompanionControls';
 
 export default function App() {
   const {
     state,
     voiceStatus,
-    liveG,
-    vector,
+    aiTriage,
     resetToNormal,
     triggerTestFall,
   } = useFallDetection();
@@ -21,18 +21,24 @@ export default function App() {
     <SafeAreaView style={[styles.safeArea, isFallen ? styles.bgFallen : styles.bgNormal]}>
       <StatusBar style="light" />
       <ScrollView contentContainerStyle={styles.container}>
-        <StatusBanner isFallen={isFallen} voiceStatus={voiceStatus} />
-        <TelemetryCard liveG={liveG} vector={vector} />
+        <View style={styles.header}>
+          <Text style={styles.badgeText}>LAS VEGAS SPHERE AI COMPANION</Text>
+          <Text style={styles.titleText}>{isFallen ? '⚠️ I AM WORRIED' : '💛 ALL GOOD & HAPPY'}</Text>
+        </View>
 
-        {isFallen ? (
-          <TouchableOpacity style={styles.resetBtn} onPress={resetToNormal}>
-            <Text style={styles.resetBtnText}>↺ MANUAL RESET</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.testBtn} onPress={triggerTestFall}>
-            <Text style={styles.testBtnText}>⚡ Simulate Test Fall</Text>
-          </TouchableOpacity>
-        )}
+        <SphereFace state={state} voiceStatus={voiceStatus} />
+
+        <CompanionSpeechBubble
+          state={state}
+          voiceStatus={voiceStatus}
+          aiTriage={aiTriage}
+        />
+
+        <CompanionControls
+          state={state}
+          onReset={resetToNormal}
+          onTestFall={triggerTestFall}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -43,41 +49,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bgNormal: {
-    backgroundColor: '#0f172a',
+    backgroundColor: '#0c0a09',
   },
   bgFallen: {
-    backgroundColor: '#b91c1c',
+    backgroundColor: '#450a0a',
   },
   container: {
     padding: 24,
-    paddingTop: 40,
-    justifyContent: 'center',
-    flexGrow: 1,
-    gap: 20,
-  },
-  resetBtn: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 20,
-    borderRadius: 16,
+    paddingTop: 30,
     alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: '100%',
   },
-  resetBtnText: {
-    color: '#b91c1c',
-    fontSize: 18,
+  header: {
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  badgeText: {
+    color: '#a8a29e',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 2,
+  },
+  titleText: {
+    color: '#fef08a',
+    fontSize: 22,
     fontWeight: '900',
-    letterSpacing: 1,
-  },
-  testBtn: {
-    backgroundColor: '#1e293b',
-    borderWidth: 1,
-    borderColor: '#334155',
-    paddingVertical: 16,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  testBtnText: {
-    color: '#94a3b8',
-    fontSize: 14,
-    fontWeight: '600',
+    marginTop: 6,
+    letterSpacing: 0.5,
   },
 });

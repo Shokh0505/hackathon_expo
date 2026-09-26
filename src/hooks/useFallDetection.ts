@@ -17,10 +17,10 @@ export function useFallDetection() {
 
   const detectorRef = useRef<FallDetector>(new FallDetector(DEFAULT_CONFIG));
 
-  const startVoiceTriage = useCallback(async () => {
+  const startVoiceTriage = useCallback(async (peakG: number) => {
     try {
       setVoiceStatus('LISTENING');
-      const triage = await AITriageService.recordAndAnalyze(4000);
+      const triage = await AITriageService.recordAndAnalyze(4000, peakG);
 
       if (!triage) {
         setVoiceStatus('IDLE');
@@ -49,7 +49,7 @@ export function useFallDetection() {
     setState('FALLEN');
     setVoiceStatus('SPEAKING');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    VoiceService.alertFallDetected(() => startVoiceTriage());
+    VoiceService.alertFallDetected(() => startVoiceTriage(event.peakG));
   }, [startVoiceTriage]);
 
   const resetToNormal = useCallback(() => {

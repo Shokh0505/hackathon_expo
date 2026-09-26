@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import {
   AudioModule,
   RecordingPresets,
@@ -13,16 +14,17 @@ export class AudioRecorderService {
       const { granted } = await requestRecordingPermissionsAsync();
       return granted;
     } catch (err) {
-      console.warn('Microphone permission error:', err);
+      console.warn('[AudioRecorder] Permission check error:', err);
       return false;
     }
   }
 
-  public async startRecording(): Promise<void> {
+  public async startRecording(): Promise<boolean> {
     try {
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) {
-        throw new Error('Microphone permission denied');
+        console.warn('[AudioRecorder] Mic permission denied');
+        return false;
       }
 
       await setAudioModeAsync({
@@ -30,12 +32,25 @@ export class AudioRecorderService {
         playsInSilentMode: true,
       });
 
-      this.recorder = new AudioModule.AudioRecorder(RecordingPresets.HIGH_QUALITY);
+      const preset = RecordingPresets.HIGH_QUALITY;
+      const options = {
+        extension: preset.extension,
+        sampleRate: preset.sampleRate,
+        numberOfChannels: preset.numberOfChannels,
+        bitRate: preset.bitRate,
+        isMeteringEnabled: false,
+        ...(Platform.OS === 'android' ? preset.android : preset.ios),
+      };
+
+      this.recorder = new AudioModule.AudioRecorder(options);
       await this.recorder.prepareToRecordAsync();
       this.recorder.record();
+      console.log('[AudioRecorder] Recording started successfully');
+      return true;
     } catch (err) {
-      console.error('Failed to start recording:', err);
-      throw err;
+      console.error('[AudioRecorder] Failed to start recording:', err);
+      this.recorder = null;
+      return false;
     }
   }
 
@@ -44,10 +59,12 @@ export class AudioRecorderService {
       if (!this.recorder) return null;
       await this.recorder.stop();
       const uri = this.recorder.uri;
+      console.log('[AudioRecorder] Recording stopped, URI:', uri);
       this.recorder = null;
       return uri;
     } catch (err) {
-      console.error('Failed to stop recording:', err);
+      console.error('[AudioRecorder] Failed to stop recording:', err);
+      this.recorder = null;
       return null;
     }
   }

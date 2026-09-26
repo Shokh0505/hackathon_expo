@@ -1,0 +1,57 @@
+import { StyleSheet } from 'react-native';
+
+export const styles = StyleSheet.create({
+  container: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 24,
+  },
+  sphereBall: {
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    borderBottomWidth: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#fbbf24',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.45,
+    shadowRadius: 20,
+    elevation: 10,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  glossHighlight: {
+    position: 'absolute',
+    top: 14,
+    left: 30,
+    width: 70,
+    height: 38,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    transform: [{ rotate: '-25deg' }],
+  },
+  midFaceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    zIndex: 2,
+  },
+  blushLeft: {
+    position: 'absolute',
+    left: 34,
+    width: 24,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: 'rgba(244, 63, 94, 0.4)',
+  },
+  blushRight: {
+    position: 'absolute',
+    right: 34,
+    width: 24,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: 'rgba(244, 63, 94, 0.4)',
+  },
+});
